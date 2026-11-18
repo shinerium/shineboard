@@ -131,7 +131,10 @@ if [[ $CADDY -eq 1 ]]; then
     fi
     [[ -f "$CF" ]] && cp -a "$CF" "$CF.before-shineboard"
     {
-      if [[ -n "$EMAIL" ]]; then printf '{\n\temail %s\n}\n\n' "$EMAIL"; fi
+      # HTTP/1.1 and HTTP/2 only: the firewall opens TCP 443, not the UDP that HTTP/3 needs.
+      printf '{\n'
+      if [[ -n "$EMAIL" ]]; then printf '\temail %s\n' "$EMAIL"; fi
+      printf '\tservers {\n\t\tprotocols h1 h2\n\t}\n}\n\n'
       sed "s|^mcp\.example\.org {|$DOMAIN {|" /opt/shineboard/src/deploy/Caddyfile
     } > "$CF"
   fi
