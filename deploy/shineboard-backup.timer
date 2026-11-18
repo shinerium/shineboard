@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
+# Copyright 2026 The Shinerium Authors
+# Part of ShineBoard, the Shinerium sessions' board.
+
+[Unit]
+Description=ShineBoard's backup, every hour
+
+[Timer]
+OnCalendar=hourly
+RandomizedDelaySec=120
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,55 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
+# Copyright 2026 The Shinerium Authors
+# Part of ShineBoard, the Shinerium sessions' board.
+#
+# The server, on 127.0.0.1:8471 behind Caddy (deploy/install.sh installs this).
+
+[Unit]
+Description=ShineBoard, the Shinerium sessions' board (MCP server)
+Documentation=https://github.com/shinerium/shineboard
+After=network.target
+
+[Service]
+Type=simple
+User=shineboard
+Group=shineboard
+Environment=SHINEBOARD_CONFIG=/etc/shineboard/shineboard.toml
+Environment=PYTHONPATH=/opt/shineboard/src
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/shineboard/venv/bin/python -m shineboard.cli serve
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=15
+UMask=0077
+
+# It reads its code and settings, and writes only the database and the backups.
+ReadWritePaths=/var/lib/shineboard /var/backups/shineboard
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectProc=invisible
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+RemoveIPC=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+MemoryMax=512M
+TasksMax=128
+
+[Install]
+WantedBy=multi-user.target

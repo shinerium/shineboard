@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+build/
+dist/
+# A database or a backup never goes into the repository.
+*.db
+*.db-wal
+*.db-shm
+*.toml.local

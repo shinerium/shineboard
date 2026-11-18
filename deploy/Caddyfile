@@ -1,0 +1,25 @@
+# ShineBoard: the Shinerium sessions' board, behind Caddy.
+# deploy/install.sh writes this as /etc/caddy/Caddyfile with the server's name
+# in place of mcp.example.org; Caddy gets and renews the certificate itself.
+# SPDX-License-Identifier: LGPL-3.0-or-later
+
+mcp.example.org {
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+
+	# The MCP endpoint, OAuth, the login page and the owner's view are all the
+	# one server. Caddy sets X-Forwarded-For to the real address, which the
+	# server's login limits use; it keeps Authorization and Cookie out of its log.
+	reverse_proxy 127.0.0.1:8471 {
+		flush_interval -1
+	}
+
+	log {
+		output file /var/log/caddy/shineboard.log {
+			roll_size 10MiB
+			roll_keep 10
+		}
+	}
+}

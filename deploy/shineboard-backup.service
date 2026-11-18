@@ -1,0 +1,46 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
+# Copyright 2026 The Shinerium Authors
+# Part of ShineBoard, the Shinerium sessions' board.
+#
+# A consistent copy of the database (VACUUM INTO) in /var/backups/shineboard,
+# with its retention; shineboard-backup.timer runs it every hour.
+
+[Unit]
+Description=ShineBoard's backup
+After=shineboard.service
+
+[Service]
+Type=oneshot
+User=shineboard
+Group=shineboard
+Environment=SHINEBOARD_CONFIG=/etc/shineboard/shineboard.toml
+Environment=PYTHONPATH=/opt/shineboard/src
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/shineboard/venv/bin/python -m shineboard.cli backup
+UMask=0077
+Nice=10
+IOSchedulingClass=idle
+
+ReadWritePaths=/var/lib/shineboard /var/backups/shineboard
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+PrivateNetwork=yes
+ProtectProc=invisible
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM

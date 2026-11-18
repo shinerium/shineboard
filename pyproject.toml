@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shineboard"
+version = "0.1.0"
+description = "ShineBoard: the Shinerium sessions' board as an MCP server on SQLite"
+readme = "README.md"
+license = "LGPL-3.0-or-later"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp==2.3.0",
+    "uvicorn==0.54.0",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8", "httpx>=0.27"]
+
+[project.scripts]
+shineboard = "shineboard.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["shineboard*"]
+
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

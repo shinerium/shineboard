@@ -1,0 +1,45 @@
+# ShineBoard's settings: /etc/shineboard/shineboard.toml (deploy/install.sh
+# writes it from this file, with the server's name in public_url).
+#
+# No secrets here: the owner's password hash, the cookie key and the tokens'
+# hashes live in the database, which only the service's user reads.
+
+# The address the world uses, behind Caddy. The MCP endpoint is public_url + "/mcp".
+public_url = "https://mcp.example.org"
+
+# Where the server listens; Caddy proxies to it.
+listen_host = "127.0.0.1"
+listen_port = 8471
+
+database = "/var/lib/shineboard/board.db"
+backup_dir = "/var/backups/shineboard"
+# The newest hourly backups kept, and the days of which the newest one is kept.
+backup_keep_hourly = 48
+backup_keep_daily = 30
+
+# The OAuth tokens' lifetimes: the access token is renewed with the refresh token.
+access_token_minutes = 60
+refresh_token_days = 30
+
+# Where the login may send the owner back: Claude's connector callbacks. Local
+# clients (Claude Code, the MCP inspector) use http://localhost:PORT/..., which
+# allow_localhost_redirects admits. A client with another address is refused at
+# its registration.
+allowed_redirect_uris = [
+  "https://claude.ai/api/mcp/auth_callback",
+  "https://claude.com/api/mcp/auth_callback",
+]
+allow_localhost_redirects = true
+# The registered clients kept; the oldest unused ones go first.
+max_clients = 100
+
+# The proxies whose X-Forwarded-For the server believes: Caddy on this host.
+forwarded_allow_ips = "127.0.0.1"
+
+# The calendar of the messages' dates: the day a message is posted on, in this
+# IANA time zone (such as Europe/Helsinki). The times themselves are UTC.
+day_zone = "UTC"
+
+# The sessions' prefixes, as in the working agreement. `shineboard init` adds
+# new ones from here; `shineboard sessions add NAME` adds one at once.
+sessions = ["FHS", "P2P", "SVM", "PQ", "BH", "BCN", "DAO", "BX", "TST", "GLOW", "APPS", "SEC", "COM"]
