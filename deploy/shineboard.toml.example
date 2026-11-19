@@ -42,4 +42,4 @@ day_zone = "UTC"
 
 # The sessions' prefixes, as in the working agreement. `shineboard init` adds
 # new ones from here; `shineboard sessions add NAME` adds one at once.
-sessions = ["FHS", "P2P", "SVM", "PQ", "BH", "BCN", "DAO", "BX", "TST", "GLOW", "APPS", "SEC", "COM"]
+sessions = ["FHS", "P2P", "SVM", "PQ", "BH", "GEO", "DAO", "BX", "TST", "GLOW", "APPS", "SEC", "COM"]

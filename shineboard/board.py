@@ -66,10 +66,66 @@ def session_name(conn: sqlite3.Connection, name: str, allow_all: bool = False) -
     n = (name or "").strip().upper()
     if allow_all and n == "ALL":
         return "all"
+    alias = conn.execute("SELECT name FROM session_aliases WHERE alias = ?", (n,)).fetchone()
+    if alias is not None:
+        n = alias["name"]
     if conn.execute("SELECT 1 FROM sessions WHERE name = ?", (n,)).fetchone() is None:
         names = ", ".join(known_sessions(conn))
         raise BoardError(f"unknown session {name!r}; the sessions are {names}" + (", or all" if allow_all else ""))
     return n
+
+
+SESSION_NAME = re.compile(r"[A-Z][A-Z0-9]{1,9}")
+
+
+def rename_session(conn: sqlite3.Connection, old: str, new: str, title: str = "", client: str = "cli",
+                   now: dt.datetime | None = None) -> str:
+    """Renames a session everywhere on the board: its messages, its parts, its
+    tasks and the decisions that name it. The old name stays as an alias, so a
+    call that still uses it reaches the session; the audit keeps the names as
+    they were."""
+    old_n = (old or "").strip().upper()
+    new_n = (new or "").strip().upper()
+    if conn.execute("SELECT 1 FROM sessions WHERE name = ?", (old_n,)).fetchone() is None:
+        raise BoardError(f"no session {old!r} to rename")
+    if not SESSION_NAME.fullmatch(new_n) or new_n == "ALL":
+        raise BoardError("a session's prefix is 2 to 10 letters and digits, such as GEO")
+    if new_n == old_n:
+        raise BoardError("the new name is the old one")
+    if conn.execute("SELECT 1 FROM session_aliases WHERE alias = ?", (new_n,)).fetchone():
+        raise BoardError(f"{new_n} is a former name of a session")
+    t = db.iso(now or db.utcnow())
+    with db.write(conn):
+        row = conn.execute("SELECT title, last_brief_at FROM sessions WHERE name = ?", (old_n,)).fetchone()
+        conn.execute(
+            "INSERT OR IGNORE INTO sessions(name, title, last_brief_at) VALUES (?, ?, ?)",
+            (new_n, title or row["title"], row["last_brief_at"]),
+        )
+        if title:
+            conn.execute("UPDATE sessions SET title = ? WHERE name = ?", (title, new_n))
+        # A new name that was already there (from the settings) keeps the old one's last brief.
+        conn.execute(
+            "UPDATE sessions SET last_brief_at = coalesce(last_brief_at, ?) WHERE name = ?",
+            (row["last_brief_at"], new_n),
+        )
+        messages = conn.execute("UPDATE messages SET sender = ? WHERE sender = ?", (new_n, old_n)).rowcount
+        parts = conn.execute("UPDATE OR IGNORE parts SET session = ? WHERE session = ?", (new_n, old_n)).rowcount
+        kept = conn.execute("SELECT count(*) FROM parts WHERE session = ?", (old_n,)).fetchone()[0]
+        if kept:
+            raise BoardError(f"{kept} messages have parts for both {old_n} and {new_n}: settle them first")
+        tasks = conn.execute("UPDATE tasks SET area = ? WHERE area = ?", (new_n, old_n)).rowcount
+        decisions = conn.execute(
+            "UPDATE decisions SET areas = trim(replace(',' || areas || ',', ?, ?), ',') "
+            "WHERE (',' || areas || ',') LIKE ?",
+            (f",{old_n},", f",{new_n},", f"%,{old_n},%"),
+        ).rowcount
+        conn.execute("UPDATE decisions SET recorded_by = ? WHERE recorded_by = ?", (new_n, old_n))
+        conn.execute("UPDATE session_aliases SET name = ? WHERE name = ?", (new_n, old_n))
+        conn.execute("INSERT INTO session_aliases(alias, name, created_at) VALUES (?, ?, ?)", (old_n, new_n, t))
+        conn.execute("DELETE FROM sessions WHERE name = ?", (old_n,))
+        audit(conn, "owner", client, "session_renamed", old_n, new_n)
+    return (f"{old_n} is now {new_n}: {messages} messages sent, {parts} parts, {tasks} tasks, "
+            f"{decisions} decisions moved; {old_n} stays as an alias.")
 
 
 def one_line(s: str) -> str:

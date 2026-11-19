@@ -30,6 +30,14 @@ CREATE TABLE IF NOT EXISTS sessions (
     last_brief_at TEXT
 );
 
+-- A session's former names (sessions rename): a call that names one means the
+-- session it became, and init does not bring it back from the settings.
+CREATE TABLE IF NOT EXISTS session_aliases (
+    alias      TEXT PRIMARY KEY,
+    name       TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+
 -- A message to one or more sessions, or to all. Its status is the parts:
 -- one for each recipient, which that recipient keeps.
 CREATE TABLE IF NOT EXISTS messages (
@@ -197,6 +205,8 @@ def init(conn: sqlite3.Connection, sessions: list[str]) -> None:
         elif int(row["value"]) > SCHEMA_VERSION:
             raise RuntimeError(f"the database's schema is version {row['value']}, newer than this ShineBoard's {SCHEMA_VERSION}")
         for name in sessions:
+            if conn.execute("SELECT 1 FROM session_aliases WHERE alias = ?", (name,)).fetchone():
+                continue  # renamed: the session lives on under its new name
             conn.execute("INSERT OR IGNORE INTO sessions(name) VALUES (?)", (name,))
 
 

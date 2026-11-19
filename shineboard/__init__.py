@@ -10,4 +10,4 @@ notices to all, the answers to its own messages, its tasks and the recent
 decisions. The board of record is one SQLite database behind one HTTPS endpoint.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"

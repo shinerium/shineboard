@@ -21,7 +21,7 @@ DEFAULT_PATH = "/etc/shineboard/shineboard.toml"
 # The sessions of the working agreement (claude/working-agreement.md), by their
 # ID prefixes. `shineboard sessions add` adds one later.
 DEFAULT_SESSIONS = [
-    "FHS", "P2P", "SVM", "PQ", "BH", "BCN", "DAO", "BX", "TST", "GLOW", "APPS", "SEC", "COM",
+    "FHS", "P2P", "SVM", "PQ", "BH", "GEO", "DAO", "BX", "TST", "GLOW", "APPS", "SEC", "COM",
 ]
 
 # Where Claude's apps send the owner back after the login: claude.ai's and

@@ -21,7 +21,7 @@ from .tools import Store, register
 from .web import Web
 
 INSTRUCTIONS = (
-    "ShineBoard is the Shinerium sessions' board: the messages between the sessions (FHS, P2P, SVM, PQ, BH, BCN, "
+    "ShineBoard is the Shinerium sessions' board: the messages between the sessions (FHS, P2P, SVM, PQ, BH, GEO, "
     "DAO, BX, TST, GLOW, APPS, SEC, COM), their tasks and the recorded decisions. At your start, call "
     "board_brief with your session's prefix: it shows what waits for you and what changed since your last brief. "
     "Read a message in full with board_read. Answer your own part of a message with board_set_part (done, noted, "

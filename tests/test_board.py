@@ -160,3 +160,51 @@ def test_day_zone(conn):
     assert days == {a: "2026-11-17", b: "2026-11-18"}
     times = {r[0] for r in conn.execute("SELECT posted_at FROM messages WHERE id IN (?, ?)", (a, b))}
     assert times == {"2026-11-17T23:00:00Z"}, "the times stay UTC"
+
+
+def test_rename_session(conn):
+    # As on the server before the rename: BCN on the board, GEO not yet.
+    with db.write(conn):
+        conn.execute("DELETE FROM sessions WHERE name = 'GEO'")
+        conn.execute("INSERT INTO sessions(name) VALUES ('BCN')")
+    a = mid(board.post(conn, "BCN", ["COM"], "From the beacons", "x", now=at(0)))
+    b = mid(board.post(conn, "COM", ["BCN", "FHS"], "To the beacons", "y", now=at(1)))
+    board.set_part(conn, b, "FHS", "done", now=at(2))
+    board.set_task(conn, "BCN", "Measure", ref="BCN-3", now=at(2))
+    board.record_decision(conn, "COM", "geo-test", "A decision", "d", "2026-11-20", ["PQ", "BCN", "FHS"], now=at(2))
+    board.brief(conn, "BCN", now=at(3))
+    out = board.rename_session(conn, "bcn", "geo", "Geolocation & latency", now=at(4))
+    assert out.startswith("BCN is now GEO: 1 messages sent, 1 parts, 1 tasks, 1 decisions moved")
+    assert conn.execute("SELECT sender FROM messages WHERE id = ?", (a,)).fetchone()[0] == "GEO"
+    assert "- GEO: open" in board.read(conn, [b])
+    assert "GEO-" not in board.tasks(conn, "GEO") and "BCN-3 [open] Measure" in board.tasks(conn, "GEO")
+    assert conn.execute("SELECT areas FROM decisions WHERE key = 'geo-test'").fetchone()[0] == "PQ,GEO,FHS"
+    row = conn.execute("SELECT title, last_brief_at FROM sessions WHERE name = 'GEO'").fetchone()
+    assert row["title"] == "Geolocation & latency" and row["last_brief_at"] == "2026-11-18T09:00:00Z"
+    assert conn.execute("SELECT count(*) FROM sessions WHERE name = 'BCN'").fetchone()[0] == 0
+    # The old name still reaches the session.
+    assert board.session_name(conn, "bcn") == "GEO"
+    c = mid(board.post(conn, "BCN", ["COM"], "Still as BCN", "z", now=at(5)))
+    assert conn.execute("SELECT sender FROM messages WHERE id = ?", (c,)).fetchone()[0] == "GEO"
+    assert f"#{b}" in board.brief(conn, "BCN", now=at(6))
+    assert "is a former name" in str(pytest.raises(board.BoardError, board.rename_session, conn, "COM", "BCN").value)
+    with pytest.raises(board.BoardError, match="no session"):
+        board.rename_session(conn, "BCN", "LOC")
+    with pytest.raises(board.BoardError, match="2 to 10 letters"):
+        board.rename_session(conn, "GEO", "G")
+    # The settings may still list the old name: init does not bring it back.
+    db.init(conn, ["BCN", "GEO", "COM"])
+    assert conn.execute("SELECT count(*) FROM sessions WHERE name = 'BCN'").fetchone()[0] == 0
+    assert "unknown session" not in board.overview(conn)
+    assert any(r["action"] == "session_renamed" for r in conn.execute("SELECT action FROM audit"))
+
+
+def test_rename_into_a_listed_name(conn):
+    # GEO came from the settings first; BCN's history merges into it.
+    with db.write(conn):
+        conn.execute("INSERT INTO sessions(name) VALUES ('BCN')")
+    m = mid(board.post(conn, "COM", ["BCN"], "To the beacons", "y", now=at(0)))
+    board.brief(conn, "BCN", now=at(1))
+    board.rename_session(conn, "BCN", "GEO", now=at(2))
+    assert "- GEO: open" in board.read(conn, [m])
+    assert conn.execute("SELECT last_brief_at FROM sessions WHERE name = 'GEO'").fetchone()[0] == "2026-11-18T07:00:00Z"

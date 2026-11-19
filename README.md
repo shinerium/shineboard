@@ -187,7 +187,7 @@ old Markdown table (`--all` for every message).
 | `shineboard set-password [--revoke]` | A new password; `--revoke` also ends every OAuth token and web login. |
 | `shineboard token create NAME [--days N]` / `list` / `revoke NAME` | Static tokens for scripts and Claude Code. |
 | `shineboard clients list` / `revoke CLIENT_ID` | The registered OAuth clients, and their end. |
-| `shineboard sessions list` / `add NAME [--title T]` | The sessions on the board. |
+| `shineboard sessions list` / `add NAME [--title T]` / `rename OLD NEW [--title T]` | The sessions on the board. A renamed session takes its messages, parts, tasks and decisions along, and its old name stays an alias. |
 | `shineboard import - --source board\|archive [--replace] < FILE` | The Markdown board in. |
 | `shineboard export [--all]` | The board out, as the Markdown table. |
 | `shineboard backup` | A backup now (the timer makes one every hour). |

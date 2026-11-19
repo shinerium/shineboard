@@ -130,6 +130,16 @@ def cmd_clients(cfg, args) -> int:
 
 def cmd_sessions(cfg, args) -> int:
     conn = _conn(cfg)
+    if args.action == "rename":
+        if not args.name or not args.new:
+            print("shineboard sessions rename OLD NEW [--title T]", file=sys.stderr)
+            return 1
+        try:
+            print(board.rename_session(conn, args.name, args.new, args.title))
+        except board.BoardError as e:
+            print(str(e), file=sys.stderr)
+            return 1
+        return 0
     if args.action == "add":
         name = (args.name or "").upper()
         if not re.fullmatch(r"[A-Z][A-Z0-9]{1,9}", name):
@@ -252,8 +262,9 @@ def main(argv: list[str] | None = None) -> int:
     sp.add_argument("action", choices=["list", "revoke"])
     sp.add_argument("client_id", nargs="?")
     sp = sub.add_parser("sessions", help="the sessions on the board")
-    sp.add_argument("action", choices=["list", "add"])
+    sp.add_argument("action", choices=["list", "add", "rename"])
     sp.add_argument("name", nargs="?")
+    sp.add_argument("new", nargs="?", help="rename: the new name")
     sp.add_argument("--title", default="")
     sp = sub.add_parser("import", help="import a Markdown board or its archive")
     sp.add_argument("file", help="the Markdown file, or - for standard input")
